@@ -24,10 +24,6 @@ GyroSensor.colorNormal = sm.color.new( 0xff40ffff )
 GyroSensor.colorHighlight = sm.color.new( 0xff80ffff )
 GyroSensor.poseWeightCount = 1
 
-if server_playerList == nil then
-    server_playerList = {}
-end
-
 if server_seat == nil then
     server_seat = {}
 end
@@ -56,13 +52,9 @@ function Camera_Converter.client_onCreate( self )
     client_interactables[self.interactable:getId()] = self.interactable
 end
 
-function Camera_Converter.client_onFixedUpdate( self, timeStep )
-    local parent = self.interactable:getSingleParent()
-
-    local isOldestTotal = self:isOldestConverter(client_interactables)
-    if isOldestTotal then
-        self:client_sendPlayerInfo()
-    end
+function Camera_Converter.client_onUpdate( self, dt )
+    self.interactable:setPoseWeight(0, self.interactable:isActive() and 1 or 0)
+    self.interactable:setUvFrameIndex(self.interactable:isActive() and 6 or 0)
 end
 
 function Camera_Converter.server_onFixedUpdate( self, timeStep )
@@ -78,23 +70,23 @@ function Camera_Converter.server_onFixedUpdate( self, timeStep )
         local isOldestChild = self:isOldestConverter(parent:getChildren())
         if isOldestChild then
             if parent:getSingleParent() then
-                local playerData = server_getNearestPlayer(parent:getSingleParent():getShape():getWorldPosition())
-                if playerData then
+                local player = server_getNearestPlayer(parent:getSingleParent():getShape():getWorldPosition())
+                if player then
+                    --Initialise 
                     local toSave = {yaw = 0, pitch = 0, roll = 0}
                     
                     local gyroFront = parent:getShape().up * -1
                     local gyroRight = parent:getShape().right
                     local gyroUp = gyroFront:cross(gyroRight) * -1
                     
-                    local playerYawPitch = directionToYawPitch(playerData.direction)
+                    local playerYawPitch = directionToYawPitch(player.character:getDirection())
                     local gyroYawPitch = directionToYawPitch(gyroFront)
                     
                     local seatRoll = sm.util.clamp((math.acos(gyroRight.z)-math.pi/2)/math.pi*-2, -1, 1)
-                    --print((math.acos(gyroRight.z)-math.pi/2)/math.pi*-2, gyroRight)
                     
                     toSave = {yaw = playerYawPitch.yaw - gyroYawPitch.yaw, pitch = playerYawPitch.pitch - gyroYawPitch.pitch, roll = seatRoll}
                     
-                    
+                    --Handle the part where the yaw goes from 1 to -1
                     if math.abs(toSave.yaw) > 1 then
                         if toSave.yaw > 0 then
                             toSave.yaw = (-1 + playerYawPitch.yaw) - (1 + gyroYawPitch.yaw)
@@ -103,22 +95,7 @@ function Camera_Converter.server_onFixedUpdate( self, timeStep )
                         end
                     end
                     
-                    
-                    
-                    --if (gyroFront.x >= 0) ~= (playerData.direction.x >= 0) then
-                        --toSave.yaw = toSave.yaw - 1
-                    --end
-                    
-                    --toSave.yaw = (toSave.yaw>(math.pi/2)) and toSave.yaw-math.pi or (toSave.yaw<-(math.pi/2) and toSave.yaw+math.pi or toSave.yaw)
-                    
-                    --print(toSave)
-                    --print(toSave.yaw, playerYawPitch.yaw, gyroYawPitch.yaw, math.atan2(0,1))
-                    --print(toSave.yaw)
-                    
-                    --if math.abs(toSave.yaw) > 0.1 then
-                    --    print(toSave.yaw, playerYawPitch.yaw, gyroYawPitch.yaw)
-                    --end
-                    
+                    --Storing the yaw, pitch and roll that the converters need to use
                     server_seat[parent:getId()] = toSave
                 end
             end
@@ -130,7 +107,7 @@ function Camera_Converter.server_onFixedUpdate( self, timeStep )
         if seatData then
             if uuid == Camera_Converter.uuid_Y_pos then
                 local power = toCameraPower(seatData.yaw)
-                print(power, seatData.yaw)
+                --print(power, seatData.yaw)
                 setCameraConverterEnabled(self, power > 0,  power)
             elseif uuid == Camera_Converter.uuid_Y_neg then
                 local power = toCameraPower(seatData.yaw)
@@ -177,17 +154,17 @@ end
 
 
 function server_getNearestPlayer( position )
-    local nearestData = nil
+    local nearestPlayer = nil
     local nearestDistance = nil
-    for id,data in pairs(server_playerList) do
-        local length2 = sm.vec3.length2(position - data.position)
+    for id,player in pairs(sm.player.getAllPlayers()) do
+        --print(id, player)
+        local length2 = sm.vec3.length2(position - player.character:getWorldPosition())
         if nearestDistance == nil or length2 < nearestDistance then
             nearestDistance = length2
-            nearestData = data
+            nearestPlayer = player
         end
     end
-    if nearestData then nearestData.distance = nearestDistance end
-    return nearestData
+    return nearestPlayer
 end
 
 function Camera_Converter.isOldestConverter( self, childList )
@@ -202,27 +179,9 @@ function Camera_Converter.isOldestConverter( self, childList )
     return (oldestInteractable ~= nil and self.interactable:getId() == oldestInteractable:getId())
 end
 
-function Camera_Converter.client_sendPlayerInfo( self )
-    local data = {}
-    data["id"] = sm.localPlayer.getId()
-    data["position"] = sm.localPlayer.getPosition()
-    data["direction"] = sm.localPlayer.getDirection()
-    self.network:sendToServer("server_receivePlayerInfo", data)
-end
-
-function Camera_Converter.server_receivePlayerInfo( self, data )
-    if data then
-        data.timeStamp = os.clock()
-        server_playerList[data.id] = data
-        
-    else
-        error("Received empty player data")
-    end
-end
-
 function isCameraConverter(interactable)
     --print(interactable)
-    if not doesExist(interactable) then
+    if not sm.exists(interactable) then
         return false
     end
     local uuid = tostring(interactable:getShape():getShapeUuid())
@@ -237,15 +196,7 @@ end
 
 
 function setCameraConverterEnabled( self, enabled, power )
-    if enabled then
-        self.network:sendToClients("client_setPoseWeight", 1)
-        self.network:sendToClients("client_setUvFrameIndex", 6)
-        self.interactable:setActive(true)
-    else
-        self.network:sendToClients("client_setPoseWeight", 0)
-        self.network:sendToClients("client_setUvFrameIndex", 0)
-        self.interactable:setActive(false)
-    end
+    self.interactable:setActive(enabled)
     self.interactable:setPower(power)
     
     local shouldAlwaysActive = nil
@@ -263,23 +214,3 @@ function setCameraConverterEnabled( self, enabled, power )
     end
     
 end
-
-function Camera_Converter.client_setPoseWeight( self, weight )
-    self.interactable:setPoseWeight(0, weight)
-end
-
-function Camera_Converter.client_setUvFrameIndex( self, index )
-    self.interactable:setUvFrameIndex(index)
-end
-
-function doesExist(object)
-    local exists, msg = pcall(function(object)
-        --print(object)
-        local tmp = object:getBody()
-        return true
-    end, object)
-    --print("returning", exists, "for", object)
-    return exists
-end
-
-
