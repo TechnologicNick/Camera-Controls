@@ -1,8 +1,0 @@
-{
-   "description" : "[h1][b]This mod adds a Gyro Sensor that compares the direction of the Gyro Sensor to the direction of the camera of the player.[/b][/h1]\n\nConnect it to electric engines to create a turret that you can control using your camera. You can also connect it to a logic gate to do some other stuff.\n\n[b]NOTE: Should now also work with the test branch (0.3.1)[/b]\n\n[b]OUTPUTS:[/b]\n[list]\n[*] Yaw (Positive) = Player is looking to the left\n[*] Yaw (Negative) = Player is looking to the right\n[*] Pitch (Positive) = Player is looking down\n[*] Pitch (Negative) = Player is looking up\n[*] Roll (Positive) = The Gyro's side to the right of 'TOP' is higher than the side to the left of 'TOP'\n[*] Roll (Negative) = The Gyro's side to the right of 'TOP' is lower than the side to the left of 'TOP'\n[/list]\n\n[b]HOW TO CONNECT:[/b]\nDriver's Seat -> Gyro Sensor -> Gyro Outputs -> Electric Engines -> Bearings\n\n[b]HOW TO MAKE A TURRET:[/b]\nIt works the best if you apply the Yaw first, then the Pitch and finally the Roll.\n[url=https://steamcommunity.com/sharedfiles/filedetails/?id=1428584382]>>Example<<[/url]\n\n[b]TODO:[/b]\n[list]\n[*] Use new networking code (I have to wait for 0.3.1 to come to the default branch).\n[*] [strike]Fix a small bug with the yaw.[/strike]\n[*] Add raycast mode.\n[*] Add raycast mode that includes the drop of potatoes.\n[/list]",
-   "fileId" : 1428574074,
-   "localId" : "4fcfdb20-5c8d-4ed5-9c07-2341914b0698",
-   "name" : "Camera Controls",
-   "type" : "Blocks and Parts",
-   "version" : 0
-}
