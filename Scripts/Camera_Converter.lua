@@ -158,10 +158,12 @@ function server_getNearestPlayer( position )
     local nearestDistance = nil
     for id,player in pairs(sm.player.getAllPlayers()) do
         --print(id, player)
-        local length2 = sm.vec3.length2(position - player.character:getWorldPosition())
-        if nearestDistance == nil or length2 < nearestDistance then
-            nearestDistance = length2
-            nearestPlayer = player
+        if sm.exists(player.character) then
+            local length2 = sm.vec3.length2(position - player.character:getWorldPosition())
+            if nearestDistance == nil or length2 < nearestDistance then
+                nearestDistance = length2
+                nearestPlayer = player
+            end
         end
     end
     return nearestPlayer
