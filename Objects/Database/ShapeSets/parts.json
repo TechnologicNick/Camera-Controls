@@ -34,7 +34,7 @@
 					}
 				]
 			},
-			"rotationSet": "PropYZ",
+			"rotationSet": "PropYNegZ",
             "scripted" : 
 			{
 				"filename": "$MOD_DATA/Scripts/Camera_Converter.lua",
