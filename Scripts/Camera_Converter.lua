@@ -2,7 +2,7 @@ Camera_Converter = class( nil )
 Camera_Converter.maxChildCount = -1
 Camera_Converter.maxParentCount = 1
 Camera_Converter.connectionInput = sm.interactable.connectionType.logic
-Camera_Converter.connectionOutput = sm.interactable.connectionType.logic
+Camera_Converter.connectionOutput = sm.interactable.connectionType.logic + sm.interactable.connectionType.power
 Camera_Converter.colorNormal = sm.color.new( 0x007fffff )
 Camera_Converter.colorHighlight = sm.color.new( 0x3094ffff )
 Camera_Converter.poseWeightCount = 1
@@ -203,7 +203,7 @@ function setCameraConverterEnabled( self, enabled, power )
     
     local shouldAlwaysActive = nil
     for k,v in pairs(self.interactable:getChildren()) do
-        if tostring(v:getType()) == "Controller" then
+        if v:hasOutputType( sm.interactable.connectionType.bearing ) then
             if shouldAlwaysActive == nil then
                 shouldAlwaysActive = true
             end
