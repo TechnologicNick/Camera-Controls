@@ -1,20 +1,16 @@
-Camera_Converter = class( nil )
-Camera_Converter.maxChildCount = -1
-Camera_Converter.maxParentCount = 1
-Camera_Converter.connectionInput = sm.interactable.connectionType.logic
-Camera_Converter.connectionOutput = sm.interactable.connectionType.logic + sm.interactable.connectionType.power
-Camera_Converter.colorNormal = sm.color.new( 0x007fffff )
-Camera_Converter.colorHighlight = sm.color.new( 0x3094ffff )
-Camera_Converter.poseWeightCount = 1
+dofile("uuids.lua")
 
-Camera_Converter.uuid_gyro  = "c7ce3f96-63ef-4428-b34a-a8b9c66cc931"
-Camera_Converter.uuid_Y_pos = "d99af2e3-ebb3-4f62-8371-d6204fe79b95"
-Camera_Converter.uuid_Y_neg = "16be17c8-b2e1-4e95-ac7b-3986c10fb8f2"
-Camera_Converter.uuid_P_pos = "17783e8e-5d4a-479d-a81e-608c9389056f"
-Camera_Converter.uuid_P_neg = "f21e1396-2c17-4c67-a6d0-0773fc9de0bd"
-Camera_Converter.uuid_R_pos = "59eb64fc-7cc9-49d2-ad17-59d8ac5a0af4"
-Camera_Converter.uuid_R_neg = "a58b0b1b-93aa-4c26-88b8-7ead87e88fdf"
+---@class CameraConverter : ShapeClass
+CameraConverter = class( nil )
+CameraConverter.maxChildCount = -1
+CameraConverter.maxParentCount = 1
+CameraConverter.connectionInput = sm.interactable.connectionType.logic
+CameraConverter.connectionOutput = sm.interactable.connectionType.logic + sm.interactable.connectionType.power
+CameraConverter.colorNormal = sm.color.new( 0x007fffff )
+CameraConverter.colorHighlight = sm.color.new( 0x3094ffff )
+CameraConverter.poseWeightCount = 1
 
+---@class GyroSensor : ShapeClass
 GyroSensor = class( nil )
 GyroSensor.maxChildCount = -1
 GyroSensor.maxParentCount = 1
@@ -36,9 +32,20 @@ if client_interactables == nil then
     client_interactables = {}
 end
 
-function GyroSensor.server_onFixedUpdate( self, timeStep )
+g_converterData = {
+    [tostring(obj_converter_yaw_pos)]   = { axis = "yaw",   multiplier =  1 },
+    [tostring(obj_converter_yaw_neg)]   = { axis = "yaw",   multiplier = -1 },
+    [tostring(obj_converter_pitch_pos)] = { axis = "pitch", multiplier =  1 },
+    [tostring(obj_converter_pitch_neg)] = { axis = "pitch", multiplier = -1 },
+    [tostring(obj_converter_roll_pos)]  = { axis = "roll",  multiplier =  1 },
+    [tostring(obj_converter_roll_neg)]  = { axis = "roll",  multiplier = -1 },
+}
+
+
+
+function GyroSensor:server_onFixedUpdate( timeStep )
     local parent = self.interactable:getSingleParent()
-    
+
     self.interactable:setActive((parent ~= nil) and parent:isActive())
 end
 
@@ -47,22 +54,22 @@ end
 
 
 
-function Camera_Converter.client_onCreate( self )
+function CameraConverter:client_onCreate()
     client_converters[self.interactable:getId()] = self
     client_interactables[self.interactable:getId()] = self.interactable
 end
 
-function Camera_Converter.client_onUpdate( self, dt )
+function CameraConverter:client_onUpdate( dt )
     self.interactable:setPoseWeight(0, self.interactable:isActive() and 1 or 0)
     self.interactable:setUvFrameIndex(self.interactable:isActive() and 6 or 0)
 end
 
-function Camera_Converter.server_onFixedUpdate( self, timeStep )
+function CameraConverter:server_onFixedUpdate( timeStep )
     local parent = self.interactable:getSingleParent()
     
-    if parent and (tostring(parent:getShape():getShapeUuid()) ~= Camera_Converter.uuid_gyro) then
+    if parent and (parent:getShape():getShapeUuid() ~= obj_gyro_sensor) then
         --parent:disconnect(self.interactable)
-        --print(tostring(parent:getShape():getShapeUuid()), Camera_Converter.uuid_gyro)
+        --print(tostring(parent:getShape():getShapeUuid()), CameraConverter.uuid_gyro)
         return
     end
 
@@ -102,35 +109,38 @@ function Camera_Converter.server_onFixedUpdate( self, timeStep )
         end
         
         local seatData = server_seat[parent:getId()]
-        local uuid = tostring(self.interactable:getShape():getShapeUuid())
+        local uuid = self.interactable:getShape():getShapeUuid()
         
         if seatData then
-            if uuid == Camera_Converter.uuid_Y_pos then
+            if uuid == obj_converter_yaw_pos then
                 local power = toCameraPower(seatData.yaw)
-                --print(power, seatData.yaw)
-                setCameraConverterEnabled(self, power > 0,  power)
-            elseif uuid == Camera_Converter.uuid_Y_neg then
+                self:setCameraConverterEnabled(power > 0,  power)
+            elseif uuid == obj_converter_yaw_neg then
                 local power = toCameraPower(seatData.yaw)
-                setCameraConverterEnabled(self, power < 0, -power)
-            elseif uuid == Camera_Converter.uuid_P_pos then
+                self:setCameraConverterEnabled(power < 0, -power)
+            elseif uuid == obj_converter_pitch_pos then
                 local power = toCameraPower(seatData.pitch)
-                setCameraConverterEnabled(self, power > 0,  power)
-            elseif uuid == Camera_Converter.uuid_P_neg then
+                self:setCameraConverterEnabled(power > 0,  power)
+            elseif uuid == obj_converter_pitch_neg then
                 local power = toCameraPower(seatData.pitch)
-                setCameraConverterEnabled(self, power < 0, -power)
-            elseif uuid == Camera_Converter.uuid_R_pos then
+                self:setCameraConverterEnabled(power < 0, -power)
+            elseif uuid == obj_converter_roll_pos then
                 local power = toCameraPower(seatData.roll)
-                setCameraConverterEnabled(self, power > 0,  power)
-            elseif uuid == Camera_Converter.uuid_R_neg then
+                self:setCameraConverterEnabled(power > 0,  power)
+            elseif uuid == obj_converter_roll_neg then
                 local power = toCameraPower(seatData.roll)
-                setCameraConverterEnabled(self, power < 0, -power)
+                self:setCameraConverterEnabled(power < 0, -power)
             end
         end
     elseif parent and not parent:isActive() and isCameraConverter(self.interactable) then
-        setCameraConverterEnabled(self, false, 0)
+        self:setCameraConverterEnabled(false, 0)
     end
 end
 
+---Calculate the power output.
+---Low power outputs are rounded to 0.
+---@param value number The value to convert.
+---@return any power The power output.
 function toCameraPower(value)
     value = value*2
     --value = sm.util.clamp(value, -1, 1)
@@ -141,6 +151,9 @@ function toCameraPower(value)
     return value
 end
 
+---Convert a directional vector to euler angles.
+---@param direction Vec3 The normalized, directional vector.
+---@return {yaw: number, pitch: number} euler The euler angles.
 function directionToYawPitch( direction )
     local euler = {}
     euler.yaw = math.atan2(direction.y,direction.x)/math.pi
@@ -152,7 +165,9 @@ end
 
 
 
-
+---Get the nearest player.
+---@param position Vec3 The position to find the nearest player from.
+---@return Player player The nearest player.
 function server_getNearestPlayer( position )
     local nearestPlayer = nil
     local nearestDistance = nil
@@ -169,7 +184,10 @@ function server_getNearestPlayer( position )
     return nearestPlayer
 end
 
-function Camera_Converter.isOldestConverter( self, childList )
+---Check if this Camera Converter is the oldest of those connected to the Gyro Sensor.
+---@param childList table<number, Interactable> The list of interactables to find the oldest converter in.
+---@return boolean isOldestConverter If this converter is the oldest.
+function CameraConverter:isOldestConverter( childList )
     local oldestInteractable = nil
     for id,interactable in pairs(childList) do
         if interactable then
@@ -181,25 +199,24 @@ function Camera_Converter.isOldestConverter( self, childList )
     return (oldestInteractable ~= nil and self.interactable:getId() == oldestInteractable:getId())
 end
 
+---Check if the interactable is a Camera Converter.
+---@param interactable Interactable The interactable to check.
+---@return boolean isCameraConverter If the interactable is a Camera Converter.
 function isCameraConverter(interactable)
-    --print(interactable)
     if not sm.exists(interactable) then
         return false
     end
-    local uuid = tostring(interactable:getShape():getShapeUuid())
-    return (uuid == Camera_Converter.uuid_Y_pos or
-            uuid == Camera_Converter.uuid_Y_neg or
-            uuid == Camera_Converter.uuid_P_pos or
-            uuid == Camera_Converter.uuid_P_neg or
-            uuid == Camera_Converter.uuid_R_pos or
-            uuid == Camera_Converter.uuid_R_neg)
+
+    return g_converterData[tostring(interactable.shape.uuid)] and true or false
 end
 
 
-
-function setCameraConverterEnabled( self, enabled, power )
-    self.interactable:setActive(enabled)
-    self.interactable:setPower(power)
+---Sets the Camera Converter's outputs.
+---@param enabled boolean
+---@param power number
+function CameraConverter:setCameraConverterEnabled( enabled, power )
+    self.interactable.active = enabled
+    self.interactable.power = power
     
     local shouldAlwaysActive = nil
     for k,v in pairs(self.interactable:getChildren()) do

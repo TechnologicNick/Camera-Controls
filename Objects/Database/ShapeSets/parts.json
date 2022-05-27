@@ -37,7 +37,7 @@
 			"rotationSet": "PropYNegZ",
             "scripted" : 
 			{
-				"filename": "$MOD_DATA/Scripts/Camera_Converter.lua",
+				"filename": "$MOD_DATA/Scripts/CameraConverter.lua",
 				"classname": "GyroSensor"
 			},
 			"color": "ff0000",
@@ -80,8 +80,8 @@
 			"rotationSet": "PropYZ",
             "scripted" : 
 			{
-				"filename": "$MOD_DATA/Scripts/Camera_Converter.lua",
-				"classname": "Camera_Converter"
+				"filename": "$MOD_DATA/Scripts/CameraConverter.lua",
+				"classname": "CameraConverter"
 			},
 			"color": "ff0000",
 			"box": { "x": 1, "y": 1, "z": 1 },
@@ -123,8 +123,8 @@
 			"rotationSet": "PropYZ",
             "scripted" : 
 			{
-				"filename": "$MOD_DATA/Scripts/Camera_Converter.lua",
-				"classname": "Camera_Converter"
+				"filename": "$MOD_DATA/Scripts/CameraConverter.lua",
+				"classname": "CameraConverter"
 			},
 			"color": "ff0000",
 			"box": { "x": 1, "y": 1, "z": 1 },
@@ -166,8 +166,8 @@
 			"rotationSet": "PropYZ",
             "scripted" : 
 			{
-				"filename": "$MOD_DATA/Scripts/Camera_Converter.lua",
-				"classname": "Camera_Converter"
+				"filename": "$MOD_DATA/Scripts/CameraConverter.lua",
+				"classname": "CameraConverter"
 			},
 			"color": "ff0000",
 			"box": { "x": 1, "y": 1, "z": 1 },
@@ -209,8 +209,8 @@
 			"rotationSet": "PropYZ",
             "scripted" : 
 			{
-				"filename": "$MOD_DATA/Scripts/Camera_Converter.lua",
-				"classname": "Camera_Converter"
+				"filename": "$MOD_DATA/Scripts/CameraConverter.lua",
+				"classname": "CameraConverter"
 			},
 			"color": "ff0000",
 			"box": { "x": 1, "y": 1, "z": 1 },
@@ -252,8 +252,8 @@
 			"rotationSet": "PropYZ",
             "scripted" : 
 			{
-				"filename": "$MOD_DATA/Scripts/Camera_Converter.lua",
-				"classname": "Camera_Converter"
+				"filename": "$MOD_DATA/Scripts/CameraConverter.lua",
+				"classname": "CameraConverter"
 			},
 			"color": "ff0000",
 			"box": { "x": 1, "y": 1, "z": 1 },
@@ -295,8 +295,8 @@
 			"rotationSet": "PropYZ",
             "scripted" : 
 			{
-				"filename": "$MOD_DATA/Scripts/Camera_Converter.lua",
-				"classname": "Camera_Converter"
+				"filename": "$MOD_DATA/Scripts/CameraConverter.lua",
+				"classname": "CameraConverter"
 			},
 			"color": "ff0000",
 			"box": { "x": 1, "y": 1, "z": 1 },
