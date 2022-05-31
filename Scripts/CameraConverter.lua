@@ -20,10 +20,6 @@ GyroSensor.colorNormal = sm.color.new( 0xff40ffff )
 GyroSensor.colorHighlight = sm.color.new( 0xff80ffff )
 GyroSensor.poseWeightCount = 1
 
-if server_seat == nil then
-    server_seat = {}
-end
-
 if client_converters == nil then
     client_converters = {}
 end
@@ -94,70 +90,64 @@ function CameraConverter:server_onFixedUpdate( timeStep )
     local gyro = self.interactable:getSingleParent()
     
     if gyro and (gyro:getShape():getShapeUuid() ~= obj_gyro_sensor) then
-        --gyro:disconnect(self.interactable)
-        --print(tostring(gyro:getShape():getShapeUuid()), CameraConverter.uuid_gyro)
         return
     end
 
-    if gyro and gyro:isActive() then
-        local isOldestChild = self:isOldestConverter(gyro:getChildren())
-        if isOldestChild then
-            if gyro:getSingleParent() then
-                if gyro.publicData.cameraRotation then
-                    --Initialise 
-                    local toSave = {yaw = 0, pitch = 0, roll = 0}
-                    
-                    local gyroFront = gyro:getShape().up * -1
-                    local gyroRight = gyro:getShape().right
-                    local gyroUp = gyroFront:cross(gyroRight) * -1
-                    
-                    local playerYawPitch = directionToYawPitch(sm.quat.getUp(gyro.publicData.cameraRotation))
-                    local gyroYawPitch = directionToYawPitch(gyroFront)
-                    
-                    local seatRoll = sm.util.clamp((math.acos(gyroRight.z)-math.pi/2)/math.pi*-2, -1, 1)
-                    
-                    toSave = {yaw = playerYawPitch.yaw - gyroYawPitch.yaw, pitch = playerYawPitch.pitch - gyroYawPitch.pitch, roll = seatRoll}
-                    
-                    --Handle the part where the yaw goes from 1 to -1
-                    if math.abs(toSave.yaw) > 1 then
-                        if toSave.yaw > 0 then
-                            toSave.yaw = (-1 + playerYawPitch.yaw) - (1 + gyroYawPitch.yaw)
-                        else
-                            toSave.yaw = (1 + playerYawPitch.yaw) - (-1 + gyroYawPitch.yaw)
-                        end
-                    end
-                    
-                    --Storing the yaw, pitch and roll that the converters need to use
-                    server_seat[gyro:getId()] = toSave
+    if gyro and gyro.active then
+        if gyro.publicData.cameraRotation and self:isOldestConverter(gyro:getChildren()) then
+            local gyroFront = gyro:getShape().up * -1
+            local gyroRight = gyro:getShape().right
+            -- local gyroUp = gyroFront:cross(gyroRight) * -1
+            
+            local playerYawPitch = directionToYawPitch(sm.quat.getUp(gyro.publicData.cameraRotation))
+            local gyroYawPitch = directionToYawPitch(gyroFront)
+            
+            local gyroRoll = sm.util.clamp((math.acos(gyroRight.z)-math.pi/2)/math.pi*-2, -1, 1)
+            
+            local euler = {
+                yaw = playerYawPitch.yaw - gyroYawPitch.yaw,
+                pitch = playerYawPitch.pitch - gyroYawPitch.pitch,
+                roll = gyroRoll,
+            }
+            
+            --Handle the part where the yaw goes from 1 to -1
+            if math.abs(euler.yaw) > 1 then
+                if euler.yaw > 0 then
+                    euler.yaw = (-1 + playerYawPitch.yaw) - (1 + gyroYawPitch.yaw)
+                else
+                    euler.yaw = (1 + playerYawPitch.yaw) - (-1 + gyroYawPitch.yaw)
                 end
             end
+            
+            --Storing the yaw, pitch and roll that the converters need to use
+            gyro.publicData.euler = euler
         end
         
-        local seatData = server_seat[gyro:getId()]
-        local uuid = self.interactable:getShape():getShapeUuid()
+        local euler = gyro.publicData.euler
+        local uuid = self.interactable.shape.uuid
         
-        if seatData then
+        if euler then
             if uuid == obj_converter_yaw_pos then
-                local power = toCameraPower(seatData.yaw)
+                local power = toCameraPower(euler.yaw)
                 self:setCameraConverterEnabled(power > 0,  power)
             elseif uuid == obj_converter_yaw_neg then
-                local power = toCameraPower(seatData.yaw)
+                local power = toCameraPower(euler.yaw)
                 self:setCameraConverterEnabled(power < 0, -power)
             elseif uuid == obj_converter_pitch_pos then
-                local power = toCameraPower(seatData.pitch)
+                local power = toCameraPower(euler.pitch)
                 self:setCameraConverterEnabled(power > 0,  power)
             elseif uuid == obj_converter_pitch_neg then
-                local power = toCameraPower(seatData.pitch)
+                local power = toCameraPower(euler.pitch)
                 self:setCameraConverterEnabled(power < 0, -power)
             elseif uuid == obj_converter_roll_pos then
-                local power = toCameraPower(seatData.roll)
+                local power = toCameraPower(euler.roll)
                 self:setCameraConverterEnabled(power > 0,  power)
             elseif uuid == obj_converter_roll_neg then
-                local power = toCameraPower(seatData.roll)
+                local power = toCameraPower(euler.roll)
                 self:setCameraConverterEnabled(power < 0, -power)
             end
         end
-    elseif gyro and not gyro:isActive() and isCameraConverter(self.interactable) then
+    elseif gyro and not gyro.active and isCameraConverter(self.interactable) then
         self:setCameraConverterEnabled(false, 0)
     end
 end
