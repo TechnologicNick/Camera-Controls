@@ -210,14 +210,11 @@ end
 
 
 ---Sets the Camera Converter's outputs.
----@param enabled boolean
----@param power number
+---@param enabled boolean The active state
+---@param power number The power value
 function CameraConverter:setCameraConverterEnabled( enabled, power )
-    self.interactable.active = enabled
-    self.interactable.power = power
-    
     local shouldAlwaysActive = nil
-    for k,v in pairs(self.interactable:getChildren()) do
+    for _, v in ipairs(self.interactable:getChildren()) do
         if v:hasOutputType( sm.interactable.connectionType.bearing ) then
             if shouldAlwaysActive == nil then
                 shouldAlwaysActive = true
@@ -227,7 +224,15 @@ function CameraConverter:setCameraConverterEnabled( enabled, power )
         end
     end
     if shouldAlwaysActive ~= nil and shouldAlwaysActive == true then
-        self.interactable:setActive(true)
+        enabled = true
     end
     
+    -- Only update state if it changes (prevents writing to disk)
+    if self.interactable.active ~= enabled then
+        self.interactable.active = enabled
+    end
+
+    if self.interactable.power ~= power then
+        self.interactable.power = power
+    end
 end
