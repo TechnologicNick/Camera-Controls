@@ -125,28 +125,10 @@ function CameraConverter:server_onFixedUpdate( timeStep )
         end
         
         local euler = gyro.publicData.euler
-        local uuid = self.interactable.shape.uuid
-        
         if euler then
-            if uuid == obj_converter_yaw_pos then
-                local power = toCameraPower(euler.yaw)
-                self:setCameraConverterEnabled(power > 0,  power)
-            elseif uuid == obj_converter_yaw_neg then
-                local power = toCameraPower(euler.yaw)
-                self:setCameraConverterEnabled(power < 0, -power)
-            elseif uuid == obj_converter_pitch_pos then
-                local power = toCameraPower(euler.pitch)
-                self:setCameraConverterEnabled(power > 0,  power)
-            elseif uuid == obj_converter_pitch_neg then
-                local power = toCameraPower(euler.pitch)
-                self:setCameraConverterEnabled(power < 0, -power)
-            elseif uuid == obj_converter_roll_pos then
-                local power = toCameraPower(euler.roll)
-                self:setCameraConverterEnabled(power > 0,  power)
-            elseif uuid == obj_converter_roll_neg then
-                local power = toCameraPower(euler.roll)
-                self:setCameraConverterEnabled(power < 0, -power)
-            end
+            local converterData = g_converterData[tostring(self.interactable.shape.uuid)]
+            local power = toCameraPower(euler[converterData.axis]) * converterData.multiplier
+            self:setCameraConverterEnabled(power > 0,  power)
         end
     elseif gyro and not gyro.active and isCameraConverter(self.interactable) then
         self:setCameraConverterEnabled(false, 0)
