@@ -102,12 +102,13 @@ function CameraConverter:server_onFixedUpdate( timeStep )
             local playerYawPitch = directionToYawPitch(sm.quat.getUp(gyro.publicData.cameraRotation))
             local gyroYawPitch = directionToYawPitch(gyroFront)
             
+            local playerRoll = sm.util.clamp((math.acos(sm.quat.getRight(gyro.publicData.cameraRotation).z)-math.pi/2)/math.pi*-2, -1, 1)
             local gyroRoll = sm.util.clamp((math.acos(gyroRight.z)-math.pi/2)/math.pi*-2, -1, 1)
             
             local euler = {
                 yaw = playerYawPitch.yaw - gyroYawPitch.yaw,
                 pitch = playerYawPitch.pitch - gyroYawPitch.pitch,
-                roll = gyroRoll,
+                roll = -playerRoll + gyroRoll,
             }
             
             --Handle the part where the yaw goes from 1 to -1
