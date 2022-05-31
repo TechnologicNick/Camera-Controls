@@ -20,14 +20,6 @@ GyroSensor.colorNormal = sm.color.new( 0xff40ffff )
 GyroSensor.colorHighlight = sm.color.new( 0xff80ffff )
 GyroSensor.poseWeightCount = 1
 
-if client_converters == nil then
-    client_converters = {}
-end
-
-if client_interactables == nil then
-    client_interactables = {}
-end
-
 g_converterData = {
     [tostring(obj_converter_yaw_pos)]   = { axis = "yaw",   multiplier =  1 },
     [tostring(obj_converter_yaw_neg)]   = { axis = "yaw",   multiplier = -1 },
@@ -36,6 +28,10 @@ g_converterData = {
     [tostring(obj_converter_roll_pos)]  = { axis = "roll",  multiplier =  1 },
     [tostring(obj_converter_roll_neg)]  = { axis = "roll",  multiplier = -1 },
 }
+
+
+
+
 
 function GyroSensor:server_onCreate()
     self.interactable.publicData = {}
@@ -74,12 +70,6 @@ end
 
 
 
-
-
-function CameraConverter:client_onCreate()
-    client_converters[self.interactable:getId()] = self
-    client_interactables[self.interactable:getId()] = self.interactable
-end
 
 function CameraConverter:client_onUpdate( dt )
     self.interactable:setPoseWeight(0, self.interactable:isActive() and 1 or 0)
