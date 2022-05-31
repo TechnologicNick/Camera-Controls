@@ -41,12 +41,38 @@ g_converterData = {
     [tostring(obj_converter_roll_neg)]  = { axis = "roll",  multiplier = -1 },
 }
 
-
+function GyroSensor:server_onCreate()
+    self.interactable.publicData = {}
+end
 
 function GyroSensor:server_onFixedUpdate( timeStep )
-    local parent = self.interactable:getSingleParent()
+    local seat = self.interactable:getSingleParent()
 
-    self.interactable:setActive((parent ~= nil) and parent:isActive())
+    -- Only update active state if it changes (prevents writing to disk)
+    local newActive = (seat ~= nil) and seat:isActive()
+    if self.interactable.active ~= newActive then
+        self.interactable.active = newActive
+    end
+end
+
+function GyroSensor:client_onFixedUpdate( timeStep )
+    local seat = self.interactable:getSingleParent()
+    if not ((seat ~= nil) and seat.active) then
+        return
+    end
+
+    local character = sm.localPlayer.getPlayer().character
+    if not (character and character:getLockingInteractable() == seat) then
+        return
+    end
+
+    self.network:sendToServer("sv_updateCameraRotation", sm.camera.getRotation())
+end
+
+function GyroSensor:sv_updateCameraRotation( rotation, player )
+    -- Not implementing anti-cheat for this, seems kinda pointless
+
+    self.interactable.publicData.cameraRotation = rotation
 end
 
 
@@ -65,28 +91,27 @@ function CameraConverter:client_onUpdate( dt )
 end
 
 function CameraConverter:server_onFixedUpdate( timeStep )
-    local parent = self.interactable:getSingleParent()
+    local gyro = self.interactable:getSingleParent()
     
-    if parent and (parent:getShape():getShapeUuid() ~= obj_gyro_sensor) then
-        --parent:disconnect(self.interactable)
-        --print(tostring(parent:getShape():getShapeUuid()), CameraConverter.uuid_gyro)
+    if gyro and (gyro:getShape():getShapeUuid() ~= obj_gyro_sensor) then
+        --gyro:disconnect(self.interactable)
+        --print(tostring(gyro:getShape():getShapeUuid()), CameraConverter.uuid_gyro)
         return
     end
 
-    if parent and parent:isActive() then
-        local isOldestChild = self:isOldestConverter(parent:getChildren())
+    if gyro and gyro:isActive() then
+        local isOldestChild = self:isOldestConverter(gyro:getChildren())
         if isOldestChild then
-            if parent:getSingleParent() then
-                local player = server_getNearestPlayer(parent:getSingleParent():getShape():getWorldPosition())
-                if player then
+            if gyro:getSingleParent() then
+                if gyro.publicData.cameraRotation then
                     --Initialise 
                     local toSave = {yaw = 0, pitch = 0, roll = 0}
                     
-                    local gyroFront = parent:getShape().up * -1
-                    local gyroRight = parent:getShape().right
+                    local gyroFront = gyro:getShape().up * -1
+                    local gyroRight = gyro:getShape().right
                     local gyroUp = gyroFront:cross(gyroRight) * -1
                     
-                    local playerYawPitch = directionToYawPitch(player.character:getDirection())
+                    local playerYawPitch = directionToYawPitch(sm.quat.getUp(gyro.publicData.cameraRotation))
                     local gyroYawPitch = directionToYawPitch(gyroFront)
                     
                     local seatRoll = sm.util.clamp((math.acos(gyroRight.z)-math.pi/2)/math.pi*-2, -1, 1)
@@ -103,12 +128,12 @@ function CameraConverter:server_onFixedUpdate( timeStep )
                     end
                     
                     --Storing the yaw, pitch and roll that the converters need to use
-                    server_seat[parent:getId()] = toSave
+                    server_seat[gyro:getId()] = toSave
                 end
             end
         end
         
-        local seatData = server_seat[parent:getId()]
+        local seatData = server_seat[gyro:getId()]
         local uuid = self.interactable:getShape():getShapeUuid()
         
         if seatData then
@@ -132,7 +157,7 @@ function CameraConverter:server_onFixedUpdate( timeStep )
                 self:setCameraConverterEnabled(power < 0, -power)
             end
         end
-    elseif parent and not parent:isActive() and isCameraConverter(self.interactable) then
+    elseif gyro and not gyro:isActive() and isCameraConverter(self.interactable) then
         self:setCameraConverterEnabled(false, 0)
     end
 end
